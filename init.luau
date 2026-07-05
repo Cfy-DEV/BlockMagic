@@ -4,18 +4,18 @@ local UserInputService = game:GetService("UserInputService")
 local directions = {
 	[Enum.KeyCode.A] = "left",
 	[Enum.KeyCode.D] = "right",
-	[Enum.KeyCode.S] = "down",
+	[Enum.KeyCode.S] = "backward",
 	[Enum.KeyCode.W] = "forward",
 	[Enum.KeyCode.Space] = "up",
 
 	[Enum.KeyCode.Left] = "left",
 	[Enum.KeyCode.Right] = "right",
-	[Enum.KeyCode.Down] = "down",
+	[Enum.KeyCode.Down] = "backward",
 	[Enum.KeyCode.Up] = "forward",
 
 	[Enum.KeyCode.DPadLeft] = "left",
 	[Enum.KeyCode.DPadRight] = "right",
-	[Enum.KeyCode.DPadDown] = "down",
+	[Enum.KeyCode.DPadDown] = "backward",
 	[Enum.KeyCode.DPadUp] = "forward",
 	[Enum.KeyCode.ButtonA] = "up",
 }
@@ -42,8 +42,21 @@ UserInputService.InputBegan:Connect(function(input: InputObject, gpe: boolean)
 		return
 	end
 
-	if currentMode == nil then
-		local mode = modes[input.KeyCode]
+	if input.KeyCode == Enum.KeyCode.F and (currentMode ~= nil and currentPart ~= nil) then
+		currentMode = nil
+		currentPart:Destroy()
+		currentPart = nil
+		db = true
+		task.delay(cooldown, function()
+			db = false
+		end)
+		return
+	end
+
+	local mode = modes[input.KeyCode]
+	local direction = directions[input.KeyCode]
+
+	if mode ~= nil then
 		if mode == nil then
 			return
 		end
@@ -58,81 +71,85 @@ UserInputService.InputBegan:Connect(function(input: InputObject, gpe: boolean)
 			return
 		end
 
-		local part = Instance.new("Part")
-		part.Anchored = true
-		part.CanCollide = true
-		part.CanQuery = false
-		part.Parent = workspace
-		part.Size = Vector3.new(2, 2, 2)
-		part.CFrame = (hrs.CFrame * CFrame.new(0, 0, -3))
+		if currentMode == nil then
+			local part = Instance.new("Part")
+			part.Anchored = true
+			part.CanCollide = true
+			part.CanQuery = false
+			part.Parent = workspace
+			part.Size = Vector3.new(2, 2, 2)
+			part.CFrame = (hrs.CFrame * CFrame.new(0, 0, -3))
 
-		currentPart = part
+			currentPart = part
+		end
 		currentMode = mode
-
-		task.delay(2, function()
-			currentMode = nil
-			part:Destroy()
-			currentPart = nil
-			db = true
-			task.delay(cooldown, function()
-				db = false
-			end)
-		end)
-	elseif currentPart ~= nil then
-		local direction = directions[input.KeyCode]
 
 		if direction == nil then
 			return
 		end
-
+	elseif direction ~= nil and currentPart ~= nil then
 		if currentMode == "scalar" then
 			db = true
-			task.delay(0.3, function()
+			task.delay(1, function()
 				db = false
 			end)
-			local tweenInfo = TweenInfo.new(0.3)
+			local tweenInfo = TweenInfo.new(1)
 			if direction == "left" or direction == "right" then
 				local targetSize = currentPart.Size + Vector3.new(5, 0, 0)
 				local tween = TweenService:Create(currentPart, tweenInfo, { Size = targetSize })
 				tween:Play()
-			elseif direction == "forward" or direction == "down" then
+			elseif direction == "forward" or direction == "backward" then
 				local targetSize = currentPart.Size + Vector3.new(0, 5, 0)
 				local tween = TweenService:Create(currentPart, tweenInfo, { Size = targetSize })
 				tween:Play()
 			elseif direction == "up" then
 				local targetSize = currentPart.Size + Vector3.new(0, 0, 15)
 				local sizeTween = TweenService:Create(currentPart, tweenInfo, { Size = targetSize })
-				local cframeTween = TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(0, 0, -7.5) })
+				local cframeTween = TweenService:Create(
+					currentPart,
+					tweenInfo,
+					{ CFrame = currentPart.CFrame * CFrame.new(0, 0, -7.5) }
+				)
 				sizeTween:Play()
 				cframeTween:Play()
 			end
 		elseif currentMode == "moving" then
 			db = true
-			task.delay(0.5, function()
+			task.delay(1, function()
 				db = false
 			end)
-			local tweenInfo = TweenInfo.new(0.5)
-			if direction == "left" or direction == "right" then
+			local tweenInfo = TweenInfo.new(1)
+			local shiftDown = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+				or UserInputService:IsKeyDown(Enum.KeyCode.RightShift)
+			local moveDirection = direction
+			if shiftDown and direction == "backward" then
+				moveDirection = "bottom"
+			end
+			if moveDirection == "left" then
 				currentPart.Size += Vector3.new(5, 0, 0)
-				local t1 = TweenService:Create(
-					currentPart,
-					tweenInfo,
-					{ Position = currentPart.Position + Vector3.new(15, 0, 0) }
-				)
+				local t1 =
+					TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(-15, 0, 0) })
 				t1:Play()
-			elseif direction == "forward" or direction == "down" then
-				local t1 = TweenService:Create(
-					currentPart,
-					tweenInfo,
-					{ Position = currentPart.Position + Vector3.new(0, 0, 15) }
-				)
+			elseif moveDirection == "right" then
+				currentPart.Size += Vector3.new(5, 0, 0)
+				local t1 =
+					TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(15, 0, 0) })
 				t1:Play()
-			elseif direction == "up" then
-				local t1 = TweenService:Create(
-					currentPart,
-					tweenInfo,
-					{ Position = currentPart.Position + Vector3.new(0, 15, 0) }
-				)
+			elseif moveDirection == "forward" then
+				local t1 =
+					TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(0, 0, -15) })
+				t1:Play()
+			elseif moveDirection == "backward" then
+				local t1 =
+					TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(0, 0, 15) })
+				t1:Play()
+			elseif moveDirection == "up" then
+				local t1 =
+					TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(0, 15, 0) })
+				t1:Play()
+			elseif moveDirection == "bottom" then
+				local t1 =
+					TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(0, -15, 0) })
 				t1:Play()
 			end
 		end
