@@ -66,6 +66,7 @@ UserInputService.InputBegan:Connect(function(input: InputObject, gpe: boolean)
 		part.Size = Vector3.new(2, 2, 2)
 		part.CFrame = (hrs.CFrame * CFrame.new(0, 0, -3))
 
+		currentPart = part
 		currentMode = mode
 
 		task.delay(2, function()
@@ -89,13 +90,21 @@ UserInputService.InputBegan:Connect(function(input: InputObject, gpe: boolean)
 			task.delay(0.3, function()
 				db = false
 			end)
+			local tweenInfo = TweenInfo.new(0.3)
 			if direction == "left" or direction == "right" then
-				currentPart.Size += Vector3.new(5, 0, 0)
+				local targetSize = currentPart.Size + Vector3.new(5, 0, 0)
+				local tween = TweenService:Create(currentPart, tweenInfo, { Size = targetSize })
+				tween:Play()
 			elseif direction == "forward" or direction == "down" then
-				currentPart.Size += Vector3.new(0, 5, 0)
+				local targetSize = currentPart.Size + Vector3.new(0, 5, 0)
+				local tween = TweenService:Create(currentPart, tweenInfo, { Size = targetSize })
+				tween:Play()
 			elseif direction == "up" then
-				currentPart.Size += Vector3.new(0, 0, 15)
-				currentPart.CFrame *= CFrame.new(0, 0, -7.5)
+				local targetSize = currentPart.Size + Vector3.new(0, 0, 15)
+				local sizeTween = TweenService:Create(currentPart, tweenInfo, { Size = targetSize })
+				local cframeTween = TweenService:Create(currentPart, tweenInfo, { CFrame = currentPart.CFrame * CFrame.new(0, 0, -7.5) })
+				sizeTween:Play()
+				cframeTween:Play()
 			end
 		elseif currentMode == "moving" then
 			db = true
