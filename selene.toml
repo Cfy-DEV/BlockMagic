@@ -1,0 +1,11 @@
+[main]
+language = "luau"
+std = ["roblox"]
+auto_format = true
+exclude = ["**/node_modules/**", "**/dist/**", "**/.git/**", "**/build/**"]
+ignore = ["**/*.md", "**/*.txt"]
+
+[style]
+line_length = 100
+indent_type = "Tabs"
+indent_width = 4
